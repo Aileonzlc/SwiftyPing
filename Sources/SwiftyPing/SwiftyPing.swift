@@ -366,7 +366,8 @@ public class SwiftyPing: NSObject {
         RunLoop.main.add(timer, forMode: .common)
         self.timeoutTimer = timer
 
-        _serial.async {
+        _serial.async { [weak self] in
+            guard let self = self else { return }
             let address = self.destination.ipv4Address
             do {
                 let icmpPackage = try self.createICMPPackage(identifier: UInt16(self.identifier), sequenceNumber: UInt16(self.sequenceIndex))
@@ -447,7 +448,8 @@ public class SwiftyPing: NSObject {
     private func informObserver(of response: PingResponse) {
         responses.append(response)
         if killswitch { return }
-        currentQueue.sync {
+        currentQueue.sync { [weak self] in
+            guard let self = self else { return }
             self.observer?(response)
             self.delegate?.didReceive(response: response)
         }
@@ -478,8 +480,8 @@ public class SwiftyPing: NSObject {
             }
         }
         if shouldSchedulePing() {
-            _serial.asyncAfter(deadline: .now() + configuration.pingInterval) {
-                self.sendPing()
+            _serial.asyncAfter(deadline: .now() + configuration.pingInterval) { [weak self] in
+                self?.sendPing()
             }
         }
     }
